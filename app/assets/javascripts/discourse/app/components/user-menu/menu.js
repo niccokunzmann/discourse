@@ -4,6 +4,7 @@ import { action } from "@ember/object";
 import { NO_REMINDER_ICON } from "discourse/models/bookmark";
 import UserMenuTab, { CUSTOM_TABS_CLASSES } from "discourse/lib/user-menu/tab";
 import { inject as service } from "@ember/service";
+import getUrl from "discourse-common/lib/get-url";
 
 const DEFAULT_TAB_ID = "all-notifications";
 const DEFAULT_PANEL_COMPONENT = "user-menu/notifications-list";
@@ -23,6 +24,10 @@ const CORE_TOP_TABS = [
     get panelComponent() {
       return DEFAULT_PANEL_COMPONENT;
     }
+
+    get linkWhenActive() {
+      return `${this.currentUser.path}/notifications`;
+    }
   },
 
   class extends UserMenuTab {
@@ -41,6 +46,10 @@ const CORE_TOP_TABS = [
     get count() {
       return this.getUnreadCountForType("replied");
     }
+
+    get linkWhenActive() {
+      return `${this.currentUser.path}/notifications`;
+    }
   },
 
   class extends UserMenuTab {
@@ -58,6 +67,10 @@ const CORE_TOP_TABS = [
 
     get count() {
       return this.getUnreadCountForType("mentioned");
+    }
+
+    get linkWhenActive() {
+      return `${this.currentUser.path}/notifications`;
     }
   },
 
@@ -80,6 +93,10 @@ const CORE_TOP_TABS = [
 
     get count() {
       return this.getUnreadCountForType("liked");
+    }
+
+    get linkWhenActive() {
+      return `${this.currentUser.path}/notifications`;
     }
   },
 
@@ -105,6 +122,10 @@ const CORE_TOP_TABS = [
         this.siteSettings.enable_personal_messages || this.currentUser.staff
       );
     }
+
+    get linkWhenActive() {
+      return `${this.currentUser.path}/messages`;
+    }
   },
 
   class extends UserMenuTab {
@@ -122,6 +143,10 @@ const CORE_TOP_TABS = [
 
     get count() {
       return this.getUnreadCountForType("bookmark_reminder");
+    }
+
+    get linkWhenActive() {
+      return `${this.currentUser.path}/activity/bookmarks`;
     }
   },
 
@@ -145,6 +170,10 @@ const CORE_TOP_TABS = [
     get count() {
       return this.currentUser.get("reviewable_count");
     }
+
+    get linkWhenActive() {
+      return getUrl("/review");
+    }
   },
 ];
 
@@ -160,6 +189,10 @@ const CORE_BOTTOM_TABS = [
 
     get panelComponent() {
       return "user-menu/profile-tab-content";
+    }
+
+    get linkWhenActive() {
+      return `${this.currentUser.path}/summary`;
     }
   },
 ];
@@ -229,18 +262,14 @@ export default class UserMenu extends Component {
     });
   }
 
-  get _coreBottomTabs() {
-    return [
-      {
-        id: "preferences",
-        icon: "user-cog",
-        href: `${this.currentUser.path}/preferences`,
-      },
-    ];
-  }
-
   @action
-  changeTab(tab) {
+  changeTab(tab, event) {
+    // workaround to stop the clickOutside hook on the
+    // `revamped-user-menu-wrapper` widget from incorrectly closing the menu
+    // when a tab is clicked
+    // TODO: check if stopPropagation is still needed when the header is
+    // converted to Glimmer
+    event.stopPropagation();
     if (this.currentTabId !== tab.id) {
       this.currentTabId = tab.id;
       this.currentPanelComponent = tab.panelComponent;
